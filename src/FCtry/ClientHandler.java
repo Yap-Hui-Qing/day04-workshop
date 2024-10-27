@@ -1,43 +1,26 @@
 package FCtry;
 
 import java.net.*;
-import java.util.*;
 import java.io.*;
 
-public class Server{
-
-    private static String fileName;
+public class ClientHandler implements Runnable {
     
-    public static void main(String[] args) throws IOException{
-        // 12345 cookie_file.txt
+    private final Socket sock;
+    private final String filename;
+
+    public ClientHandler(Socket s, String filename){
+        this.sock = s;
+        this.filename = filename;
+    }
+
+    @Override
+    public void run() {
 
         boolean close = false;
 
-        if (args.length < 2){
-            System.out.println("Usage: <port> <file>");
-            System.exit(-1);
-        }
+        String threadName = Thread.currentThread().getName();
 
-        // set the port
-        int port = Integer.parseInt(args[0]);
-
-        // set the filename
-        if (args[1] == null){
-            System.out.println("Please enter a filename.");
-        } else{
-            fileName = args[1];
-        }
-
-        // create a TCP server port
-        ServerSocket server = new ServerSocket(port);
-        
-        while (!close){
-            // waiting for an incoming connection
-            System.out.printf("Waiting for connection on port %d\n", port);
-            Socket sock = server.accept();
-
-            System.out.println("Got a new connection");
-
+        try{
             // get the input stream
             InputStream is = sock.getInputStream();
             Reader reader = new InputStreamReader(is);
@@ -56,7 +39,7 @@ public class Server{
             switch (fromClient.toLowerCase()){
                 case "get-cookie":
                 Cookie cookie = new Cookie();
-                String outputCookie = cookie.returnCookie(fileName);
+                String outputCookie = cookie.returnCookie(filename);
 
                 String fromServer = "cookie-text " + outputCookie;
 
@@ -70,15 +53,16 @@ public class Server{
                 case "close":
                 os.close();
                 is.close();
-                server.close();
+                sock.close();
                 close = true;
                 break;
 
                 default:
                 System.out.println("Invalid command, please enter again");
             }
+        } catch (IOException e){
+            System.err.println();
         }
 
     }
-        
 }
